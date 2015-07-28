@@ -1,6 +1,15 @@
 require "sinatra"
+require "sinatra/reloader"
 require "pstore"
 require "pp"
+
+
+def difference(new_value, old_value)
+  diff = (new_value - old_value)
+  diff_s = diff > 0 ? "+#{'%.2f' % diff}" : '%.2f' % diff
+
+  diff_s.rjust(20) + "#{('%.1f' % ((1 - (old_value.to_f / new_value)) * 100))}%".rjust(20)
+end
 
 set :bind, '0.0.0.0'
 
@@ -14,15 +23,28 @@ get "/" do
     yesterday = store[Date.today-1] 
     last_week = store[Date.today-8]
 
+    summary = ->(name, key) do 
+      "#{name}: ".ljust(25) + "#{'%.2f' % yesterday[key]}".rjust(10) + "#{difference(yesterday[key], last_week[key])}\n\n".rjust(30)
+    end
+
     out << "Summary (with change since last week):\n"
-    out << "--------------------------\n\n"
+    out << "---------------------------------------------------------------------------\n\n"
 
-    out << "Last 30 day visits: #{yesterday['visits_30_day']} (#{yesterday['visits_30_day'] - last_week['visits_30_day']}, #{'%.1f' % ((1 - last_week['visits_30_day']/yesterday['visits_30_day'].to_f)*100)}% )\n"
+    out << summary["30-day visitors", "visits_30_day"]
+    out << summary["7-day visitors", "visits_7_day"]
+    out << summary["1-day visitors", "visits_yesterday"]
 
-
-    out << "Last 7 day visits: #{yesterday['visits_7_day']} (#{yesterday['visits_7_day'] - last_week['visits_7_day']}, #{'%.1f' % ((1 - last_week['visits_7_day']/yesterday['visits_7_day'].to_f)*100)}% )"
-
-    out << "\n\n"
+    out << "............................................................................\n\n"
+    out << summary["30-day GTB work days", "gtb_work_days"]
+    out << summary["30-day GTB pay", "gtb_pay_last_30"]
+    out << "............................................................................\n\n"
+    out << summary["Subscribers", "subscriber_count"]
+    out << summary["30-day Transfers", "transfers_last_30"]
+    out << "............................................................................\n\n"
+    out << summary["Twitter Followers", "twitter_followers"]
+    out << summary["Twitter Mentioners", "twitter_mentioners"]
+    out << summary["Twitter Linkers", "twitter_linkers"]
+    out << "---------------------------------------------------------------------------\n\n\n"
 
     store.roots.sort.reverse_each do |date|
       out << "#{date}\n"
