@@ -11,8 +11,6 @@ require 'fileutils'
 require "pstore"
 require 'pp'
 
-puts "TODO: Slack stats, Discourse stats, Blog stats, Article milestone stats"
-
 Dotenv.load
 
 APPLICATION_NAME = 'Drive API Quickstart'
@@ -61,7 +59,6 @@ def authorize
       :client_secret => app_info.client_secret,
       :scope => SCOPE})
     auth = flow.authorize(storage)
-    puts "Credentials saved to #{CREDENTIALS_PATH}" unless auth.nil?
   end
   auth
 end
@@ -69,7 +66,6 @@ end
 Stripe.api_key = ENV['STRIPE_API_KEY']
 
 
-puts "Retrieving Google Analytics data..."
 
 # Initialize the API
 client = Google::APIClient.new(:application_name => APPLICATION_NAME)
@@ -104,8 +100,6 @@ result = client.execute(:api_method => api_method, :parameters => {
   'metrics'    => 'ga:users',
 })
 
-puts "Retrieving Google Spreadsheets data..."
-
 write_stat("visits_yesterday", result.data.rows[0][0].to_i)
 
 ws = session.spreadsheet_by_key(ENV["TIMESHEET_KEY"]).worksheets[0]
@@ -121,8 +115,6 @@ gtb_days = gtb_pay / ENV["DAY_PAY"].to_i
 write_stat("gtb_work_days", gtb_days)
 write_stat("gtb_pay_last_30", gtb_pay)
 
-
-puts "Retrieving Stripe data..."
 
 last = nil
 subscribers = []
@@ -144,7 +136,6 @@ rev =  Stripe::Transfer.all(:date => { :gt => (Date.today - 31).to_time.to_i },
 
 write_stat("transfers_last_30", rev)
 
-puts "Retrieving Twitter data..."
 
 followers = `t followers | wc -l`.strip.to_i
 
@@ -156,7 +147,3 @@ linkers = `t search all 'practicingruby.com' -c | ruby -e "require 'csv'; puts C
 
 write_stat("twitter_mentioners", mentioners)
 write_stat("twitter_linkers", linkers)
-
-puts "All done!"
-
-pp read_stats_for_date(Date.today)
