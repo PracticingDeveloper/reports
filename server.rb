@@ -20,8 +20,8 @@ get "/" do
   out = ""
  
   store.transaction(:read_only) do
-    yesterday = store[Date.today-1] 
-    last_week = store[Date.today-8]
+    yesterday = Hash.new(0).merge(store[Date.today-1]) 
+    last_week = Hash.new(0).merge(store[Date.today-8])
 
     summary = ->(name, key) do 
       "#{name}: ".ljust(25) + "#{'%.2f' % yesterday[key]}".rjust(10) + "#{difference(yesterday[key], last_week[key])}\n\n".rjust(30)
@@ -44,6 +44,12 @@ get "/" do
     out << summary["Twitter Followers", "twitter_followers"]
     out << summary["Twitter Mentioners", "twitter_mentioners"]
     out << summary["Twitter Linkers", "twitter_linkers"]
+    out << "---------------------------------------------------------------------------\n\n\n"
+    out << summary["30-day Slack chatters", "slack_participants_30_day"]
+    out << summary["7-day Slack chatters", "slack_participants_7_day"]
+    out << summary["1-day Slack chatters", "slack_participants_1_day"]
+    out << "---------------------------------------------------------------------------\n\n"
+    out << "TODO: Publication schedule stats, discourse, blog, etc.\n\n"
     out << "---------------------------------------------------------------------------\n\n\n"
 
     store.roots.sort.reverse_each do |date|

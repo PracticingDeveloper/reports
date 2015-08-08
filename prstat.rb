@@ -147,3 +147,26 @@ linkers = `t search all 'practicingruby.com' -c | ruby -e "require 'csv'; puts C
 
 write_stat("twitter_mentioners", mentioners)
 write_stat("twitter_linkers", linkers)
+
+require "slack"
+
+Slack.configure do |config|
+  config.token = ENV["SLACK_TOKEN"]
+end
+
+ids =  Slack.channels_list["channels"].map { |e| e["id"] }
+
+participants = ids.flat_map { |e|
+  Slack.channels_history(:channel => e, :count => 1000, :oldest => (Date.today - 30).to_time.to_i, :latest => (Date.today-1).to_time.to_i)["messages"] }.select { |e| e["subtype"].nil? }.map { |e| e["user"] }.uniq.count
+
+write_stat("slack_participants_30_day", participants)
+
+participants = ids.flat_map { |e|
+  Slack.channels_history(:channel => e, :count => 1000, :oldest => (Date.today - 7).to_time.to_i, :latest => (Date.today-1).to_time.to_i)["messages"] }.select { |e| e["subtype"].nil? }.map { |e| e["user"] }.uniq.count
+
+write_stat("slack_participants_7_day", participants)
+
+participants = ids.flat_map { |e|
+  Slack.channels_history(:channel => e, :count => 1000, :oldest => (Date.today-1).to_time.to_i, :latest => (Date.today).to_time.to_i)["messages"] }.select { |e| e["subtype"].nil? }.map { |e| e["user"] }.uniq.count
+
+write_stat("slack_participants_1_day", participants)
